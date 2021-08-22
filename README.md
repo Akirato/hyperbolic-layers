@@ -1,2 +1,2 @@
-# hyperbolic_layers
+# hyperbolic-layers
 Hyperbolic Layers in tensorflow and pytorch
