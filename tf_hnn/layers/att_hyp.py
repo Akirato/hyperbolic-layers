@@ -32,12 +32,14 @@ class AttentionHyperbolic(keras.layers.Layer):
 
         super().build(batch_input_shape)  # must be at the end
 
-    def call(self, inputs):
+    def call(self, inputs, adj):
         """
         Called during forward pass of a neural network. Uses hyperbolic matrix multiplication
         """
         # TODO: remove casting and instead recommend setting default tfd values to float64
         inputs = tf.cast(inputs, tf.float64)
+        adj = tf.cast(adj, tf.float64)
+        
         n = inputs.shape[1]
         inputs_left = tf.expand_dims(inputs,1)
         inputs_left = tf.broadcast_to(inputs_left,(-1,n,-1))
@@ -48,7 +50,7 @@ class AttentionHyperbolic(keras.layers.Layer):
         inputs_cat = tf.concat([inputs_left, inputs_right], axis=2)
         att_adj = tf.squeeze(keras.activations.linear(inputs_cat))
         att_adj = keras.activations.sigmoid(att_adj)
-        att_adj = tf.matmul(tf.transpose(att_adj,perm=[0,2,1]), att_adj)
+        att_adj = tf.matmul(tf.transpose(adj,perm=[0,2,1]), att_adj)
         mv = self.manifold.mobius_matvec(self.kernel, inputs)
         res = self.manifold.proj(mv)
         

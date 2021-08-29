@@ -105,7 +105,22 @@ class Lorentz(Manifold):
         p_norm = self.clipped_norm(p)
         scale = 1.0 / self._sqrt_c * arcosh(self._sqrt_c * p_norm) / p_norm
         return scale * p
+    
+    def logmap(self, x, y):
+        sqrt_k = self._sqrt_c
+        x_y = self.mobius_add(-x, y)
+        norm_x_y = tf.linalg.norm(x_y, axis=-1, keepdims=True)
+        eps = self.eps[x.dtype]
+        tanh = tf.clip_by_value(sqrt_k * norm_x_y, -1.0 + eps, 1.0 - eps)
+        lambda_x = self._lambda(x, keepdims=True)
+        return 2 * (x_y / norm_x_y) * tf.math.arcosh(tanh) / (sqrt_k * lambda_x)
+    
+    def proj_tan(self, u, p):
+        return u
 
+    def proj_tan0(self, u):
+        return u
+    
     def proj(self, x):
         """
         Safe projection on the manifold for numerical stability. This was mentioned in [1]
@@ -145,10 +160,10 @@ class Lorentz(Manifold):
     def inner(self, x, u, v, keepdims=False):
         lambda_x = self._lambda(x, keepdims=keepdims)
         return tf.reduce_sum(u * v, axis=-1, keepdims=keepdims) * lambda_x ** 2
-        
+
     def _lambda(self, x, keepdims=False):
         """Compute the conformal factor :math:`lambda_x^k`"""
-        k = tf.cast(self.k, x.dtype)
+        k = tf.cast(self._c, x.dtype)
         norm_x_2 = tf.reduce_sum(x * x, axis=-1, keepdims=keepdims)
         return 2.0 / (1.0 - k * norm_x_2)
 
